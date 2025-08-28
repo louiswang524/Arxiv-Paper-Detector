@@ -18,11 +18,32 @@ class LLMSummarizer:
         
     def check_model_availability(self) -> bool:
         try:
-            models = self.client.list()
-            available_models = [model['name'] for model in models['models']]
+            response = self.client.list()
+            
+            # Handle different possible response structures
+            if isinstance(response, dict):
+                if 'models' in response:
+                    models = response['models']
+                else:
+                    models = response
+            else:
+                models = response
+            
+            available_models = []
+            for model in models:
+                if isinstance(model, dict):
+                    if 'name' in model:
+                        available_models.append(model['name'])
+                    elif 'model' in model:
+                        available_models.append(model['model'])
+                else:
+                    available_models.append(str(model))
+            
             return any(self.model_name in model for model in available_models)
+            
         except Exception as e:
             print(f"Error checking model availability: {e}")
+            print("This usually means Ollama is not running. Please start Ollama first.")
             return False
     
     def pull_model_if_needed(self) -> bool:
@@ -125,10 +146,32 @@ Text to summarize:"""
     
     def get_available_models(self) -> list:
         try:
-            models = self.client.list()
-            return [model['name'] for model in models['models']]
+            response = self.client.list()
+            
+            # Handle different possible response structures
+            if isinstance(response, dict):
+                if 'models' in response:
+                    models = response['models']
+                else:
+                    models = response
+            else:
+                models = response
+            
+            available_models = []
+            for model in models:
+                if isinstance(model, dict):
+                    if 'name' in model:
+                        available_models.append(model['name'])
+                    elif 'model' in model:
+                        available_models.append(model['model'])
+                else:
+                    available_models.append(str(model))
+            
+            return available_models
+            
         except Exception as e:
             print(f"Error listing models: {e}")
+            print("This usually means Ollama is not running. Please start Ollama first.")
             return []
     
     def set_model(self, model_name: str):
