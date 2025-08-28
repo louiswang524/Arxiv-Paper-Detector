@@ -6,11 +6,13 @@ A lightweight, privacy-focused tool for discovering and summarizing academic pap
 
 - **🔍 Smart Paper Discovery**: Search arXiv by topic, category, date range, and more
 - **🤖 Local AI Summarization**: Generate summaries using locally hosted LLMs via Ollama
+- **🧠 Semantic Search**: Advanced keyword expansion with synonyms and related terms
 - **📄 Multiple Output Formats**: Console display, tables, Markdown, and JSON export
 - **🔒 Privacy-First**: All processing happens on your device - no cloud APIs
 - **💰 Zero Ongoing Costs**: Free to run after initial setup
 - **⚡ Efficient**: Handles both abstract-only and full-text summarization
 - **🛠️ Customizable**: Support for different summary types and LLM models
+- **🎯 Smart Ranking**: Results ranked by semantic relevance to your query
 
 ## 📋 Requirements
 
@@ -75,6 +77,26 @@ python -m apfs.main "neural networks" --category cs.AI
 python -m apfs.main "transformer architecture" --date-from 2023-01-01 --date-to 2024-12-31
 ```
 
+### Semantic Search
+
+Enhance your searches with intelligent keyword expansion:
+
+```bash
+# Enable semantic search (finds related papers even with different terminology)
+python -m apfs.main "AI" --semantic-search
+
+# Different expansion modes
+python -m apfs.main "neural networks" --semantic-search --semantic-mode conservative  # Minimal expansion
+python -m apfs.main "machine learning" --semantic-search --semantic-mode moderate    # Balanced (default)
+python -m apfs.main "NLP" --semantic-search --semantic-mode aggressive              # Maximum expansion
+
+# See how your query gets expanded
+python -m apfs.main "deep learning" --semantic-search --explain-search
+
+# Combine with other options
+python -m apfs.main "reinforcement learning" --semantic-search --category cs.AI --max-results 15
+```
+
 ### Advanced Options
 
 ```bash
@@ -121,6 +143,15 @@ python -m apfs.main "attention mechanisms" \
 | `--output-file, -o` | Output file name | Auto-generated |
 | `--download-dir` | PDF download directory | Temp directory |
 | `--cleanup/--no-cleanup` | Clean up PDFs after processing | True |
+| `--semantic-search/--no-semantic-search` | Enable semantic keyword expansion | False |
+| `--semantic-mode` | Expansion mode (conservative/moderate/aggressive) | moderate |
+| `--explain-search` | Show query expansion explanation | False |
+
+### Semantic Search Modes
+
+- **conservative**: Only direct synonyms and abbreviations (e.g., "AI" → "artificial intelligence")
+- **moderate**: Synonyms + common related terms (recommended for most searches)  
+- **aggressive**: Maximum expansion with domain-specific terms and concepts
 
 ### Summary Types
 

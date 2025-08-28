@@ -3,6 +3,7 @@ import time
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from .semantic_search import SemanticSearchEngine
 
 
 @dataclass
@@ -17,9 +18,10 @@ class Paper:
     
 
 class ArxivClient:
-    def __init__(self, max_retries: int = 3, delay_between_retries: float = 1.0):
+    def __init__(self, max_retries: int = 3, delay_between_retries: float = 1.0, enable_semantic_search: bool = False):
         self.max_retries = max_retries
         self.delay_between_retries = delay_between_retries
+        self.semantic_engine = SemanticSearchEngine() if enable_semantic_search else None
     
     def search_papers(
         self, 
@@ -27,12 +29,23 @@ class ArxivClient:
         max_results: int = 10,
         category: Optional[str] = None,
         date_from: Optional[str] = None,
-        date_to: Optional[str] = None
+        date_to: Optional[str] = None,
+        semantic_mode: Optional[str] = None
     ) -> List[Paper]:
-        search_query = query
+        # Apply semantic expansion if enabled
+        if self.semantic_engine and semantic_mode:
+            expanded_query = self.semantic_engine.build_semantic_query(query, semantic_mode)
+            search_query = expanded_query
+            print(f"🔍 Semantic search enabled ({semantic_mode} mode)")
+            print(f"📝 Expanded query: {search_query[:100]}...")
+        else:
+            search_query = query
         
         if category:
-            search_query = f"cat:{category} AND {query}"
+            if self.semantic_engine and semantic_mode:
+                search_query = f"cat:{category} AND ({search_query})"
+            else:
+                search_query = f"cat:{category} AND {query}"
         
         for attempt in range(self.max_retries):
             try:
@@ -62,6 +75,11 @@ class ArxivClient:
                         categories=result.categories
                     )
                     papers.append(paper)
+                
+                # Apply semantic ranking if enabled
+                if self.semantic_engine and semantic_mode and papers:
+                    papers = self.semantic_engine.rank_results_by_relevance(papers, query)
+                    print(f"🎯 Results ranked by semantic relevance")
                 
                 return papers
                 
@@ -99,3 +117,10 @@ class ArxivClient:
                     return None
         
         return None
+    
+    def explain_semantic_search(self, query: str, mode: str = "moderate") -> Optional[str]:
+        """Explain how semantic search will expand the query"""
+        if not self.semantic_engine:
+            return None
+        
+        return self.semantic_engine.explain_expansion(query, mode)

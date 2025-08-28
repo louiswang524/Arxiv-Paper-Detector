@@ -25,10 +25,15 @@ from .output_formatter import OutputFormatter
 @click.option('--output-file', '-o', default=None, help='Output file name (for markdown/json formats)')
 @click.option('--download-dir', default=None, help='Directory to save downloaded PDFs')
 @click.option('--cleanup/--no-cleanup', default=True, help='Clean up downloaded PDFs after processing')
+@click.option('--semantic-search/--no-semantic-search', default=False, help='Enable semantic search with keyword expansion')
+@click.option('--semantic-mode', type=click.Choice(['conservative', 'moderate', 'aggressive']), 
+              default='moderate', help='Semantic expansion mode (conservative/moderate/aggressive)')
+@click.option('--explain-search', is_flag=True, help='Show how semantic search expands your query')
 def main(query: str, max_results: int, category: Optional[str], date_from: Optional[str], 
          date_to: Optional[str], summarize: bool, summary_type: str, full_text: bool, 
          model: str, output_format: str, output_file: Optional[str], 
-         download_dir: Optional[str], cleanup: bool):
+         download_dir: Optional[str], cleanup: bool, semantic_search: bool,
+         semantic_mode: str, explain_search: bool):
     """
     ArXiv Paper Finder and Summarizer (APFS)
     
@@ -42,13 +47,23 @@ def main(query: str, max_results: int, category: Optional[str], date_from: Optio
     try:
         formatter.display_info("🔍 Starting ArXiv Paper Search...")
         
-        arxiv_client = ArxivClient()
+        # Initialize ArXiv client with semantic search if enabled
+        arxiv_client = ArxivClient(enable_semantic_search=semantic_search)
+        
+        # Show query expansion explanation if requested
+        if explain_search and semantic_search:
+            explanation = arxiv_client.explain_semantic_search(query, semantic_mode)
+            if explanation:
+                formatter.display_info("🧠 Semantic Search Explanation:")
+                print("\n" + explanation + "\n")
+        
         papers = arxiv_client.search_papers(
             query=query,
             max_results=max_results,
             category=category,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            semantic_mode=semantic_mode if semantic_search else None
         )
         
         if not papers:
